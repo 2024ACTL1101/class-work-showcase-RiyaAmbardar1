@@ -81,7 +81,9 @@ $$
 $$
 
 ```r
-#fill the code
+df <- df %>%
+  mutate(AMD_Return = (AMD / lag(AMD) - 1),
+         GSPC_Return = (GSPC / lag(GSPC) - 1))
 ```
 
 - **Calculate Risk-Free Rate**: Calculate the daily risk-free rate by conversion of annual risk-free Rate. This conversion accounts for the compounding effect over the days of the year and is calculated using the formula:
@@ -91,21 +93,25 @@ $$
 $$
 
 ```r
-#fill the code
+df <- df %>%
+  mutate(Daily_RF = (1 + RF / 100)^(1/360) - 1)
 ```
 
 
 - **Calculate Excess Returns**: Compute the excess returns for AMD and the S&P 500 by subtracting the daily risk-free rate from their respective returns.
 
 ```r
-#fill the code
+df <- df %>%
+  mutate(AMD_Excess_Return = AMD_Return - Daily_RF,
+         GSPC_Excess_Return = GSPC_Return - Daily_RF)
 ```
 
 
 - **Perform Regression Analysis**: Using linear regression, we estimate the beta (\(\beta\)) of AMD relative to the S&P 500. Here, the dependent variable is the excess return of AMD, and the independent variable is the excess return of the S&P 500. Beta measures the sensitivity of the stock's returns to fluctuations in the market.
 
 ```r
-#fill the code
+capm_model <- lm(AMD_Excess_Return ~ GSPC_Excess_Return, data = df)
+summary(capm_model)
 ```
 
 
@@ -113,23 +119,34 @@ $$
 
 What is your \(\beta\)? Is AMD more volatile or less volatile than the market?
 
-**Answer:**
+Answer: The beta calculated is 1.5699987 and as it is greater than 1 this indicates that AMD is more volatile than the market.
 
 
 #### Plotting the CAPM Line
 Plot the scatter plot of AMD vs. S&P 500 excess returns and add the CAPM regression line.
 
 ```r
-#fill the code
+ggplot(data = df, aes(x = GSPC_Excess_Return, y = AMD_Excess_Return)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "CAPM: AMD vs. S&P 500 Excess Returns",
+       x = "S&P 500 Excess Return",
+       y = "AMD Excess Return")
 ```
 
 ### Step 3: Predictions Interval
 Suppose the current risk-free rate is 5.0%, and the annual expected return for the S&P 500 is 13.3%. Determine a 90% prediction interval for AMD's annual expected return.
 
-
-
-**Answer:**
-
 ```r
-#fill the code
+# Calculate the standard error of the residuals s_f <- summary(capm_model)$sigma
+# Calculate the annual standard error
+annual_s_f <- s_f * sqrt(252)
+# Compute the mean expected return for AMD
+mean_amd_return <- 0.05 + coef(capm_model)[2] * (0.133 - 0.05)
+# Compute the 90% prediction interval
+alpha <- 0.10
+z_value <- qnorm(1 - alpha / 2)
+lower_bound <- mean_amd_return - z_value * annual_s_f
+upper_bound <- mean_amd_return + z_value * annual_s_f
+c(lower_bound, upper_bound)
 ```
